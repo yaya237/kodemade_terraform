@@ -1,0 +1,37 @@
+data "aws_ami" "linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"]
+  }
+}
+
+resource "aws_instance" "public" {
+  ami                    = data.aws_ami.linux.id
+  instance_type          = "t2.micro"
+  subnet_id              = var.public_subnet_id
+  vpc_security_group_ids = [var.public_sg_id]
+  key_name               = var.key_name
+  user_data              = file("${path.module}/userdata_public.sh")
+
+  tags = {
+    Name  = "yahya-angular-public"
+    Owner = "yahya"
+  }
+}
+
+resource "aws_instance" "private" {
+  ami                    = data.aws_ami.linux.id
+  instance_type          = "t2.micro"
+  subnet_id              = var.private_subnet_id
+  vpc_security_group_ids = [var.private_sg_id]
+  key_name               = var.key_name
+  user_data              = file("${path.module}/userdata_private.sh")
+
+  tags = {
+    Name  = "yahya-python-private"
+    Owner = "yahya"
+  }
+}
