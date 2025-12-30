@@ -1,0 +1,33 @@
+---
+# tasks file for roles/jenkins
+- name: Installer Java (prérequis Jenkins)
+  ansible.builtin.yum:
+    name: java-17-amazon-corretto
+    state: present
+  become: yes
+
+- name: Ajouter le repo Jenkins
+  ansible.builtin.yum_repository:
+    name: jenkins
+    description: Jenkins repo
+    baseurl: https://pkg.jenkins.io/redhat-stable/
+    gpgcheck: yes
+    gpgkey: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+    enabled: yes
+    state: present
+  become: yes
+
+- name: Installer Jenkins
+  ansible.builtin.yum:
+    name: jenkins
+    state: present
+    disable_gpg_check: yes   # <-- permet de passer le problème de clé
+  become: yes
+
+- name: Démarrer Jenkins
+  ansible.builtin.systemd:
+    name: jenkins
+    state: started
+    enabled: yes
+  become: yes
+
