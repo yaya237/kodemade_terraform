@@ -1,0 +1,42 @@
+pipeline {
+  agent { label 'terraform-worker' }
+  environment { AWS_DEFAULT_REGION = 'eu-west-3' }
+  stages {
+    stage('Checkout') { steps { checkout scm; sh 'ls -la' } }
+    stage('IacInit') { steps { sh 'terraform init -input=false' } }
+    stage('IacPlan') {
+      steps {
+        withCredentials([
+          string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+          string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+          string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+        ]) {
+          sh 'terraform plan -out=tfplan -input=false'
+        }
+      }
+    }
+    stage('IacApply') {
+      steps {
+        withCredentials([
+          string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+          string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+          string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+        ]) {
+          sh 'terraform apply -auto-approve tfplan'
+        }
+      }
+    }
+    stage('IacDestroy') {
+      steps {
+        input 'Destroy?'
+        withCredentials([
+          string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+          string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY'),
+          string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
+        ]) {
+          sh 'terraform destroy -auto-approve'
+        }
+      }
+    }
+  }
+}
